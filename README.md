@@ -1,16 +1,56 @@
-# React + Vite
+# SAIR Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Smart Accident Information Reporting System.
 
-Currently, two official plugins are available:
+SAIR Demo is a portfolio-safe accident reporting dashboard demo for an admin/police workflow. It focuses on reviewing fictional accident reports, monitoring report status, and viewing report locations on a live map-style interface.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Scope
 
-## React Compiler
+- Admin/police dashboard for reviewing accident reports
+- Live map view for report coordinates around fictional Amman/Jordan-style locations
+- Reports table with search and filters
+- Demo authentication that works without the backend API
+- Existing backend API support remains available when configured and online
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Demo Data
 
-## Expanding the ESLint configuration
+All bundled demo reports are fictional. The app uses `src/data/mockReports.js` when demo mode is active, no auth token exists, or the backend API is unavailable.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Demo Login
+
+On the login page, click **Enter Demo Dashboard**.
+
+Demo user:
+
+- Email: `demo@sair.local`
+- Role: `admin`
+- Mode: `demo`
+
+The demo session is stored in localStorage as `sair-demo-user` and persists across refreshes. Logging out clears the demo session and any auth token.
+
+## Tech Stack
+
+- React
+- Vite
+- React Router
+- Tailwind CSS
+- Axios
+- Leaflet / React Leaflet
+- Lucide React icons
+
+## Run Locally
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Notes
+
+Mock data is used automatically when the backend API is unavailable, so the dashboard, reports page, and live map remain usable as a portfolio demo.

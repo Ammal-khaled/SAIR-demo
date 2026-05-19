@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import Logo from "../components/ui/Logo";
 import api from "../api/client";
+import { getDemoUser } from "../utils/demoAuth";
 
 export default function Sidebar({ lang = "en", isOpen, onClose }) {
   const [width, setWidth] = useState(256);
@@ -18,6 +19,13 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const demoUser = getDemoUser();
+        if (demoUser) {
+          setUser(demoUser);
+          setLoading(false);
+          return;
+        }
+
         const token = localStorage.getItem("token");
         if (!token) {
           setLoading(false);
@@ -138,7 +146,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
 
             <div className="text-left flex-1 truncate">
               <div className="text-sm font-bold text-gray-900 truncate">
-                {loading ? "..." : (user?.fullName || user?.email || "Officer Ahmed")}
+                {loading ? "..." : (user?.fullName || user?.email || "Demo Officer")}
               </div>
 
               <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5 truncate">

@@ -92,7 +92,7 @@ export default function Register({ onNavigateToLogin }) {
               Portal Access Request
             </h1>
             <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              SAER Public Safety Portal
+              SAIR Demo Public Safety Portal
             </p>
           </div>
 

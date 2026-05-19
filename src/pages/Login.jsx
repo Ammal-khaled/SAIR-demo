@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { loginUser } from "../api/auth";
 import { useNavigate } from "react-router-dom";
+import { DEMO_USER_KEY, enterDemoMode } from "../utils/demoAuth";
 import {
   User, Lock, ArrowRight, Shield, ShieldCheck,
   Globe, Info
@@ -46,6 +47,7 @@ export default function Login({ onLogin, onNavigateToRegister }) {
         return;
       }
 
+      localStorage.removeItem(DEMO_USER_KEY);
       localStorage.setItem("token", token);
 
       if (res?.data?.user) {
@@ -65,6 +67,12 @@ export default function Login({ onLogin, onNavigateToRegister }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    const user = enterDemoMode();
+    onLogin?.({ user, mode: "demo" });
+    navigate("/dashboard");
   };
 
   return (
@@ -91,7 +99,7 @@ export default function Login({ onLogin, onNavigateToRegister }) {
               Officer Login
             </h1>
             <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              SAER Public Safety Portal
+              SAIR Demo Public Safety Portal
             </p>
           </div>
 
@@ -99,7 +107,7 @@ export default function Login({ onLogin, onNavigateToRegister }) {
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 mb-8">
             <ShieldCheck className="w-5 h-5 text-[#1a4b7c]" />
             <p className="text-xs text-blue-900">
-              Encryption active. All access is monitored.
+              Portfolio demo. Fictional accident reports are available without the backend API.
             </p>
           </div>
 
@@ -168,6 +176,19 @@ export default function Login({ onLogin, onNavigateToRegister }) {
               {loading ? "Authenticating..." : "Secure Login"}
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="w-full bg-emerald-50 text-emerald-700 border border-emerald-100 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+              Enter Demo Dashboard
+            </button>
+
+            <p className="text-[11px] text-center text-slate-500">
+              Demo mode works without backend API using fictional accident reports.
+            </p>
 
             {/* REGISTER */}
             <div className="text-center pt-2">

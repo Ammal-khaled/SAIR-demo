@@ -4,6 +4,7 @@ import { User, Mail, Phone, Shield, LogOut, Calendar, Hash, Activity } from "luc
 import api from "../api/client";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { clearAuthState, getDemoUser } from "../utils/demoAuth";
 
 export default function Profile({ onLogout }) {
   const [user, setUser] = useState(null);
@@ -15,6 +16,18 @@ export default function Profile({ onLogout }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const demoUser = getDemoUser();
+        if (demoUser) {
+          setUser({
+            ...demoUser,
+            fullName: "Demo Administrator",
+            createdAt: "2026-05-01T09:00:00.000Z",
+            id: "SAIR-DEMO-ADMIN",
+          });
+          setLoading(false);
+          return;
+        }
+
         const token = localStorage.getItem("token");
 
         if (!token) {
@@ -94,7 +107,7 @@ export default function Profile({ onLogout }) {
 
                   <button
                     onClick={() => {
-                      localStorage.removeItem("token");
+                      clearAuthState();
                       if (onLogout) onLogout();
                       else window.location.href = "/login";
                     }}

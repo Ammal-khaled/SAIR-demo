@@ -5,14 +5,13 @@ import {
   Car,
   User
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 
-import api from "../api/client";
+import { fetchReportsWithFallback } from "../data/reports";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
-// ---------------- Styles ----------------
 const globalStyles = `
   @keyframes pulse-red {
     0% { transform: scale(1); opacity: 1; }
@@ -30,7 +29,6 @@ const globalStyles = `
   }
 `;
 
-// Marker Icons
 const createIcon = (urgent, clusterCount) => {
   const color = urgent ? '#ef4444' : '#3b82f6';
   const html = `
@@ -47,7 +45,6 @@ const createIcon = (urgent, clusterCount) => {
   });
 };
 
-// ---------------- clustering (LAT/LNG based) ----------------
 const clusterIncidents = (incidents, precision = 2) => {
   const clusters = {};
 
@@ -61,7 +58,7 @@ const clusterIncidents = (incidents, precision = 2) => {
       };
     } else {
       clusters[key].cluster.push(inc);
-      if (inc.urgent) clusters[key].urgent = true; // Mark cluster as urgent if any is urgent
+      if (inc.urgent) clusters[key].urgent = true;
     }
   });
 
@@ -74,88 +71,89 @@ export default function LiveMap() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('map');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dataSource, setDataSource] = useState("api");
 
-  // ---------------- API + REALTIME ----------------
   useEffect(() => {
     let interval;
 
     const fetchReports = async () => {
-      try {
-        const res = await api.get("/reports");
+      const { reports, source } = await fetchReportsWithFallback();
+      setDataSource(source);
 
-        const mapped = res.data
-          .filter(r => r.lat && r.lng)
-          .map((r) => ({
-            id: r.id,
-            type: r.accidentType,
-            time: new Date(r.createdAt).toLocaleString(),
-            status: r.status,
-            urgent: r.status === "submitted",
-            plate: r.platesNumber?.[0] || "",
-            statement: r.description,
-            mediaUrl: r.mediaUrls?.[0] ? `http://sair-cpa-api.duckdns.org${r.mediaUrls[0]}` : null,
-            locationSource: r.locationSource,
-            occurredAt: new Date(r.occurredAt).toLocaleString(),
+      const mapped = reports
+        .filter(r => r.lat && r.lng)
+        .map((r) => ({
+          id: r.id,
+          title: r.title,
+          type: r.accidentType,
+          time: r.createdAt ? new Date(r.createdAt).toLocaleString() : `${r.date} ${r.time}`,
+          status: r.status,
+          priority: r.priority,
+          urgent: r.priority === "critical" || r.priority === "high" || r.status === "pending",
+          plate: r.platesNumber?.[0] || "",
+          statement: r.description,
+          mediaUrl: r.mediaUrls?.[0] ? `http://sair-cpa-api.duckdns.org${r.mediaUrls[0]}` : null,
+          locationSource: r.locationName,
+          occurredAt: r.occurredAt ? new Date(r.occurredAt).toLocaleString() : `${r.date} ${r.time}`,
+          lat: r.lat,
+          lng: r.lng,
+        }));
 
-            // 🔥 REAL LOCATION
-            lat: r.lat,
-            lng: r.lng,
-          }));
-
-        setIncidents(mapped);
-
-      } catch (err) {
-        console.log(err?.response?.data || err);
-      }
+      setIncidents(mapped);
     };
 
     fetchReports();
-    interval = setInterval(fetchReports, 10000);
+
+    if (dataSource !== "mock") {
+      interval = setInterval(fetchReports, 10000);
+    }
 
     return () => clearInterval(interval);
-  }, []);
+  }, [dataSource]);
 
-  // ---------------- FILTER ----------------
-  const filteredIncidents = incidents.filter((inc) =>
-    String(inc.id ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    String(inc.plate ?? "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIncidents = incidents.filter((inc) => {
+    const query = searchQuery.toLowerCase();
+
+    return (
+      String(inc.id ?? "").toLowerCase().includes(query) ||
+      String(inc.title ?? "").toLowerCase().includes(query) ||
+      String(inc.locationSource ?? "").toLowerCase().includes(query) ||
+      String(inc.plate ?? "").toLowerCase().includes(query)
+    );
+  });
 
   const clusters = clusterIncidents(filteredIncidents);
-
-  // Map Center (default to Jordan area if no points, else center on first point)
   const mapCenter = clusters.length > 0 ? [clusters[0].lat, clusters[0].lng] : [31.95, 35.91];
 
   return (
     <div className="flex h-screen bg-[#f1f5f9] overflow-hidden">
       <style>{globalStyles}</style>
 
-      <Sidebar 
-        currentView={currentView} 
-        setCurrentView={setCurrentView} 
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-
-        <Navbar 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
+        <Navbar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
         <main className="flex-1 relative overflow-hidden bg-gray-200">
-
-          {/* TOP PANEL */}
           <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 lg:p-4 rounded-xl shadow-lg border border-white/20">
             <h2 className="font-bold text-sm lg:text-base">Live Incidents</h2>
             <p className="text-[10px] lg:text-sm text-gray-500 font-medium">
               Total: {filteredIncidents.length} • Urgent: {filteredIncidents.filter(i => i.urgent).length}
             </p>
+            <p className="text-[10px] text-emerald-700 font-bold uppercase mt-1">
+              {dataSource === "mock" ? "Portfolio demo markers" : "API markers"}
+            </p>
           </div>
 
-          {/* MAP AREA */}
           <div className="relative w-full h-full z-0">
             <MapContainer center={mapCenter} zoom={11} style={{ height: '100%', width: '100%' }}>
               <TileLayer
@@ -176,14 +174,12 @@ export default function LiveMap() {
             </MapContainer>
           </div>
 
-          {/* POPUP OVERLAY (Custom UI) */}
           {selectedPin && (
             <div className="absolute right-4 lg:right-6 top-20 lg:top-24 bg-white shadow-2xl rounded-2xl p-4 lg:p-5 w-[calc(100%-2rem)] sm:w-80 z-30 animate-slide-up">
-
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-bold text-gray-900">Incident #{selectedPin.id.slice(-6)}</h3>
-                  <p className="text-xs text-gray-500">{selectedPin.id}</p>
+                  <h3 className="font-bold text-gray-900">{selectedPin.title || `Incident #${selectedPin.id.slice(-6)}`}</h3>
+                  <p className="text-xs text-gray-500">{selectedPin.locationSource}</p>
                 </div>
                 <button onClick={() => setSelectedPin(null)} className="p-1 hover:bg-gray-100 rounded-md">
                   <X size={16} className="text-gray-500" />
@@ -200,6 +196,10 @@ export default function LiveMap() {
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">Type</span>
                   <span className="font-bold text-gray-800">{selectedPin.type}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-500">Priority</span>
+                  <span className="font-bold text-gray-800 uppercase">{selectedPin.priority}</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500"><Clock size={14} className="inline mr-1" /> Time</span>
@@ -220,7 +220,9 @@ export default function LiveMap() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className={`text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wider ${
                   selectedPin.status === 'submitted' ? 'bg-blue-100 text-blue-700' :
+                  selectedPin.status === 'pending' ? 'bg-blue-100 text-blue-700' :
                   selectedPin.status === 'under_review' ? 'bg-yellow-100 text-yellow-700' :
+                  selectedPin.status === 'approved' ? 'bg-indigo-100 text-indigo-700' :
                   selectedPin.status === 'verified' ? 'bg-indigo-100 text-indigo-700' :
                   selectedPin.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
                   selectedPin.status === 'resolved' ? 'bg-green-100 text-green-700' :
@@ -249,10 +251,8 @@ export default function LiveMap() {
                   View on Google Maps
                 </a>
               </div>
-
             </div>
           )}
-
         </main>
       </div>
     </div>

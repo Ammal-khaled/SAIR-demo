@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import api from "../api/client";
+import { getDemoUser } from "../utils/demoAuth";
 
 export default function PublicRoute({ children }) {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,12 @@ export default function PublicRoute({ children }) {
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (getDemoUser()?.mode === "demo") {
+        setIsAuth(true);
+        setLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem("token");
 
       if (!token || token === "undefined" || token === "null") {

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from "../api/client";
+import { fetchReportsWithFallback } from "../data/reports";
+import { isDemoMode } from "../utils/demoAuth";
 import {
   Clock, AlertCircle, CheckCircle, FileText,
   Check, X
@@ -34,6 +36,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('active');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dataSource, setDataSource] = useState("api");
 
   const [leftWidth, setLeftWidth] = useState(35);
   const [isResizing, setIsResizing] = useState(false);
@@ -41,29 +44,33 @@ export default function Dashboard() {
   const total = incidents.length;
 
   const pending = incidents.filter(
-    i => i.status === "submitted"
+    i => i.status === "pending" || i.status === "submitted"
   ).length;
 
-  const underReview = incidents.filter(
-    i => i.status === "under_review"
+  const highPriority = incidents.filter(
+    i => i.priority === "high" || i.priority === "critical"
   ).length;
 
   const approved = incidents.filter(
-    i => i.status === "resolved"
+    i => i.status === "resolved" || i.status === "approved"
   ).length;
+
+  const countBy = (key) => incidents.reduce((acc, item) => {
+    const value = item[key] || "unknown";
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+
+  const statusBreakdown = countBy("status");
+  const priorityBreakdown = countBy("priority");
+
   // ---------------- API LOAD ----------------
   useEffect(() => {
     const fetchIncidents = async () => {
-      try {
-        const res = await api.get("/reports");
-
-        setIncidents(res.data);
-        setSelectedIncident(res.data[0] || null);
-
-      } catch (err) {
-        console.error(err);
-        setIncidents([]);
-      }
+      const { reports, source } = await fetchReportsWithFallback();
+      setDataSource(source);
+      setIncidents(reports);
+      setSelectedIncident(reports[0] || null);
     };
 
     fetchIncidents();
@@ -71,6 +78,24 @@ export default function Dashboard() {
 
   // ---------------- STATUS UPDATE ----------------
   const handleUpdateStatus = async (id, newStatus) => {
+    if (isDemoMode() || dataSource === "mock") {
+      setIncidents(prev =>
+        prev.map(inc =>
+          inc.id === id
+            ? { ...inc, status: newStatus }
+            : inc
+        )
+      );
+
+      if (selectedIncident?.id === id) {
+        setSelectedIncident(prev =>
+          prev ? { ...prev, status: newStatus } : prev
+        );
+      }
+
+      return;
+    }
+
     try {
       await api.patch(`/reports/${id}/status`, {
         status: newStatus
@@ -136,10 +161,8 @@ export default function Dashboard() {
   // ---------------- FILTER ----------------
   const statuses = [
     { id: 'all', label: 'All Cases' },
-    { id: 'submitted', label: 'Submitted' },
-    { id: 'under_review', label: 'Under Review' },
-    { id: 'verified', label: 'Verified' },
-    { id: 'in_progress', label: 'In Progress' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'approved', label: 'Approved' },
     { id: 'resolved', label: 'Resolved' },
     { id: 'rejected', label: 'Rejected' },
   ];
@@ -153,6 +176,8 @@ export default function Dashboard() {
     const matchesSearch =
       !query ||
       inc.id?.toLowerCase().includes(query) ||
+      inc.title?.toLowerCase().includes(query) ||
+      inc.locationName?.toLowerCase().includes(query) ||
       inc.accidentType?.toLowerCase().includes(query) ||
       (inc.platesNumber ?? []).join(" ").toLowerCase().includes(query)
     return matchesFilter && matchesSearch;
@@ -195,25 +220,25 @@ export default function Dashboard() {
             <StatCard
               title="Pending"
               value={pending}
-              sub="+2"
+              sub="Needs review"
               icon={Clock}
               delay="0s"
               className="p-4 lg:p-5"
             />
 
             <StatCard
-              title="Review"
-              value={underReview}
-              sub="Active"
+              title="High Priority"
+              value={highPriority}
+              sub="High/Critical"
               icon={AlertCircle}
               delay="0.1s"
               className="p-4 lg:p-5"
             />
 
             <StatCard
-              title="Approved"
+              title="Resolved/Approved"
               value={approved}
-              sub="Today"
+              sub="Processed"
               icon={CheckCircle}
               delay="0.2s"
               className="p-4 lg:p-5"
@@ -228,6 +253,42 @@ export default function Dashboard() {
               className="p-4 lg:p-5"
             />
 
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-gray-900">Status Breakdown</h2>
+                {dataSource === "mock" && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md uppercase">
+                    Portfolio demo
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(statusBreakdown).map(([status, count]) => (
+                  <span key={status} className="text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg uppercase">
+                    {status}: {count}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-gray-900">Priority Breakdown</h2>
+                <span className="text-[10px] font-bold text-gray-400 uppercase">
+                  Fictional accident reports
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(priorityBreakdown).map(([priority, count]) => (
+                  <span key={priority} className="text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg uppercase">
+                    {priority}: {count}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
 
 
@@ -294,7 +355,9 @@ export default function Dashboard() {
                           Report #{selectedIncident.id?.slice(-6) || selectedIncident.id}
                         </h2>
                         <span className={`text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wider ${selectedIncident.status === 'submitted' ? 'bg-blue-100 text-blue-700' :
+                          selectedIncident.status === 'pending' ? 'bg-blue-100 text-blue-700' :
                           selectedIncident.status === 'under_review' ? 'bg-yellow-100 text-yellow-700' :
+                            selectedIncident.status === 'approved' ? 'bg-indigo-100 text-indigo-700' :
                             selectedIncident.status === 'verified' ? 'bg-indigo-100 text-indigo-700' :
                               selectedIncident.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
                                 selectedIncident.status === 'resolved' ? 'bg-green-100 text-green-700' :
@@ -319,25 +382,13 @@ export default function Dashboard() {
                             <X className="w-4 h-4 inline mr-1" /> Reject
                           </button>
 
-                          {selectedIncident.status === 'submitted' && (
-                            <button onClick={() => handleUpdateStatus(selectedIncident.id, 'under_review')} className="flex-1 sm:flex-none px-4 py-2 bg-yellow-500 hover:bg-yellow-600 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
-                              <AlertCircle className="w-4 h-4 inline mr-1" /> Mark Review
+                          {(selectedIncident.status === 'submitted' || selectedIncident.status === 'pending') && (
+                            <button onClick={() => handleUpdateStatus(selectedIncident.id, 'approved')} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
+                              <AlertCircle className="w-4 h-4 inline mr-1" /> Approve
                             </button>
                           )}
 
-                          {selectedIncident.status === 'under_review' && (
-                            <button onClick={() => handleUpdateStatus(selectedIncident.id, 'verified')} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
-                              <CheckCircle className="w-4 h-4 inline mr-1" /> Verify Report
-                            </button>
-                          )}
-
-                          {selectedIncident.status === 'verified' && (
-                            <button onClick={() => handleUpdateStatus(selectedIncident.id, 'in_progress')} className="flex-1 sm:flex-none px-4 py-2 bg-orange-500 hover:bg-orange-600 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
-                              <Clock className="w-4 h-4 inline mr-1" /> Start Process
-                            </button>
-                          )}
-
-                          {selectedIncident.status === 'in_progress' && (
+                          {selectedIncident.status === 'approved' && (
                             <button onClick={() => handleUpdateStatus(selectedIncident.id, 'resolved')} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
                               <Check className="w-4 h-4 inline mr-1" /> Finalize Case
                             </button>
@@ -359,12 +410,12 @@ export default function Dashboard() {
                             <span className="font-bold text-gray-900 text-sm">{selectedIncident.accidentType || selectedIncident.type}</span>
                           </div>
                           <div className="flex justify-between border-b border-gray-200 pb-3">
-                            <span className="text-gray-500 font-medium text-sm">Plates Number</span>
-                            <span className="font-bold text-[#1a4b7c] bg-blue-50 px-2 py-0.5 rounded text-sm">{(selectedIncident.platesNumber || []).join(', ') || 'N/A'}</span>
+                            <span className="text-gray-500 font-medium text-sm">Priority</span>
+                            <span className="font-bold text-[#1a4b7c] bg-blue-50 px-2 py-0.5 rounded text-sm uppercase">{selectedIncident.priority || 'N/A'}</span>
                           </div>
                           <div className="flex justify-between border-b border-gray-200 pb-3">
-                            <span className="text-gray-500 font-medium text-sm">Source</span>
-                            <span className="font-bold text-gray-900 uppercase text-sm">{selectedIncident.locationSource || 'N/A'}</span>
+                            <span className="text-gray-500 font-medium text-sm">Assigned Unit</span>
+                            <span className="font-bold text-gray-900 uppercase text-sm">{selectedIncident.assignedUnit || 'N/A'}</span>
                           </div>
                           <div className="pt-1">
                             <span className="text-gray-500 font-medium block mb-2 text-sm">Description</span>
@@ -379,6 +430,9 @@ export default function Dashboard() {
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Location</h3>
                         {selectedIncident.lat && selectedIncident.lng ? (
                           <div className="bg-gray-50 rounded-xl p-4 lg:p-5 border border-gray-100">
+                            <p className="text-sm font-bold text-gray-900 text-center mb-2">
+                              {selectedIncident.locationName}
+                            </p>
                             <p className="text-gray-800 font-mono text-[11px] lg:text-sm mb-4 bg-white p-2 border border-gray-200 rounded text-center truncate">
                               {selectedIncident.lat}, {selectedIncident.lng}
                             </p>

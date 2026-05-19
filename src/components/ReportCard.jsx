@@ -88,18 +88,22 @@ export const ReportCard = ({ incident, isSelected, onClick, className = "", styl
           <span className="text-xs text-gray-400 flex items-center gap-1 font-medium">
             <Clock className="w-3 h-3" /> {incident.occurredAt
               ? new Date(incident.occurredAt).toLocaleString()
-              : "—"}
+              : incident.date && incident.time
+                ? `${incident.date} ${incident.time}`
+                : "—"}
           </span>
         </div>
 
         <h4 className="font-semibold text-gray-900 mb-3">
-          {incident.accidentType || "Report"}
+          {incident.title || incident.accidentType || "Report"}
         </h4>
 
         <div className="flex justify-between items-center">
           <Badge
             variant={
               incident.status === 'submitted' ? 'blue' :
+                incident.status === 'pending' ? 'blue' :
+                incident.status === 'approved' ? 'indigo' :
                 incident.status === 'under_review' ? 'yellow' :
                   incident.status === 'verified' ? 'indigo' :
                     incident.status === 'in_progress' ? 'orange' :
