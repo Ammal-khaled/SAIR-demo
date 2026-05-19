@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Clock,
@@ -72,6 +72,9 @@ export default function LiveMap() {
   const [currentView, setCurrentView] = useState('map');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dataSource, setDataSource] = useState("api");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
     let interval;
@@ -108,18 +111,38 @@ export default function LiveMap() {
       interval = setInterval(fetchReports, 10000);
     }
 
-    return () => clearInterval(interval);
+    window.addEventListener("sair-demo-reports-updated", fetchReports);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("sair-demo-reports-updated", fetchReports);
+    };
   }, [dataSource]);
+
+  useEffect(() => {
+    if (selectedPin && !incidents.some((incident) => incident.id === selectedPin.id)) {
+      setSelectedPin(null);
+    }
+  }, [incidents, selectedPin]);
+
+  const accidentTypes = useMemo(
+    () => [...new Set(incidents.map(incident => incident.type).filter(Boolean))],
+    [incidents]
+  );
 
   const filteredIncidents = incidents.filter((inc) => {
     const query = searchQuery.toLowerCase();
-
-    return (
+    const matchesSearch =
       String(inc.id ?? "").toLowerCase().includes(query) ||
       String(inc.title ?? "").toLowerCase().includes(query) ||
       String(inc.locationSource ?? "").toLowerCase().includes(query) ||
-      String(inc.plate ?? "").toLowerCase().includes(query)
-    );
+      String(inc.plate ?? "").toLowerCase().includes(query);
+
+    const matchesStatus = statusFilter === "all" || inc.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || inc.priority === priorityFilter;
+    const matchesType = typeFilter === "all" || inc.type === typeFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority && matchesType;
   });
 
   const clusters = clusterIncidents(filteredIncidents);
@@ -144,7 +167,7 @@ export default function LiveMap() {
         />
 
         <main className="flex-1 relative overflow-hidden bg-gray-200">
-          <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 lg:p-4 rounded-xl shadow-lg border border-white/20">
+          <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur p-3 lg:p-4 rounded-xl shadow-lg border border-white/20 w-[calc(100%-2rem)] sm:w-[360px]">
             <h2 className="font-bold text-sm lg:text-base">Live Incidents</h2>
             <p className="text-[10px] lg:text-sm text-gray-500 font-medium">
               Total: {filteredIncidents.length} • Urgent: {filteredIncidents.filter(i => i.urgent).length}
@@ -152,6 +175,29 @@ export default function LiveMap() {
             <p className="text-[10px] text-emerald-700 font-bold uppercase mt-1">
               {dataSource === "mock" ? "Portfolio demo markers" : "API markers"}
             </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-[#F4F7FB] rounded-lg px-2 py-2 text-xs font-bold outline-none border border-slate-100">
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="under_review">Under review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="resolved">Resolved</option>
+              </select>
+              <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="bg-[#F4F7FB] rounded-lg px-2 py-2 text-xs font-bold outline-none border border-slate-100">
+                <option value="all">All priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="bg-[#F4F7FB] rounded-lg px-2 py-2 text-xs font-bold outline-none border border-slate-100">
+                <option value="all">All types</option>
+                {accidentTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="relative w-full h-full z-0">

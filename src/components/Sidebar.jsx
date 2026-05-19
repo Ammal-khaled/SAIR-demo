@@ -87,7 +87,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
 
       <aside
         style={{ width: `${width}px` }}
-        className={`fixed lg:relative bg-white border-r border-gray-200 flex flex-col h-full shrink-0 z-50 shadow-sm transition-all duration-300 ${
+        className={`fixed lg:sticky lg:top-0 bg-white border-r border-[#D8E0EA] flex flex-col h-screen shrink-0 z-50 shadow-sm transition-all duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -135,7 +135,16 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
         </nav>
 
         {/* Profile */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
+        <button
+          type="button"
+          title="Open profile"
+          aria-label="Open profile"
+          onClick={() => {
+            navigate("/profile");
+            if (onClose) onClose();
+          }}
+          className="w-full p-4 border-t border-gray-100 bg-gray-50/50 hover:bg-blue-50 transition-colors cursor-pointer group text-left"
+        >
           <div className="flex items-center gap-3 flex-row-reverse">
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm text-[#1a4b7c]">
@@ -154,7 +163,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
               </div>
             </div>
           </div>
-        </div>
+        </button>
       </aside>
     </>
   );

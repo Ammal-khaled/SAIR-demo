@@ -132,3 +132,33 @@ body {
   background-color: #f8fafc;
   color: #1e293b;
 }
+
+select {
+  appearance: none;
+  background-color: #ffffff !important;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  border: 1px solid #d8e0ea !important;
+  border-radius: 12px !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  min-height: 42px;
+  padding: 10px 40px 10px 14px !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+select:hover {
+  border-color: #b9c6d6;
+}
+
+select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  outline: none;
+}

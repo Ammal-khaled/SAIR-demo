@@ -13,7 +13,7 @@ import PublicRoute from "./routes/PublicRoute";
 
 export default function App() {
   return (
-    <div className="container mx-auto min-h-screen bg-white shadow-2xl overflow-hidden relative">
+    <div className="min-h-screen bg-[#F4F7FB] overflow-x-hidden relative">
       <BrowserRouter>
         <Routes>
 

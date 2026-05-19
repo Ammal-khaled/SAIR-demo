@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import api from "../api/client";
-import { fetchReportsWithFallback } from "../data/reports";
+import { fetchReportsWithFallback, resetDemoReports, updateDemoReport } from "../data/reports";
 import { isDemoMode } from "../utils/demoAuth";
 import {
   Clock, AlertCircle, CheckCircle, FileText,
-  Check, X
+  Check, X, Users, CalendarDays, RotateCcw, MapPin
 } from 'lucide-react';
 
 // External component imports
@@ -42,9 +42,10 @@ export default function Dashboard() {
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef(null);
   const total = incidents.length;
+  const today = new Date().toISOString().slice(0, 10);
 
   const pending = incidents.filter(
-    i => i.status === "pending" || i.status === "submitted"
+    i => i.status === "pending" || i.status === "under_review" || i.status === "submitted"
   ).length;
 
   const highPriority = incidents.filter(
@@ -52,7 +53,15 @@ export default function Dashboard() {
   ).length;
 
   const approved = incidents.filter(
-    i => i.status === "resolved" || i.status === "approved"
+    i => i.status === "resolved"
+  ).length;
+
+  const unassigned = incidents.filter(
+    i => !i.assignedUnit || i.assignedUnit === "Unassigned"
+  ).length;
+
+  const reportsToday = incidents.filter(
+    i => (i.date || i.createdAt?.slice(0, 10)) === today
   ).length;
 
   const countBy = (key) => incidents.reduce((acc, item) => {
@@ -64,6 +73,35 @@ export default function Dashboard() {
   const statusBreakdown = countBy("status");
   const priorityBreakdown = countBy("priority");
 
+  const hotspotSummary = Object.values(
+    incidents.reduce((acc, report) => {
+      const location = report.locationName || "Unknown location";
+      const current = acc[location] || {
+        locationName: location,
+        count: 0,
+        types: {},
+        highestPriority: "low",
+      };
+      const priorityRank = { low: 1, medium: 2, high: 3, critical: 4 };
+
+      current.count += 1;
+      current.types[report.accidentType] = (current.types[report.accidentType] || 0) + 1;
+
+      if ((priorityRank[report.priority] || 0) > (priorityRank[current.highestPriority] || 0)) {
+        current.highestPriority = report.priority;
+      }
+
+      acc[location] = current;
+      return acc;
+    }, {})
+  )
+    .map((item) => ({
+      ...item,
+      commonType: Object.entries(item.types).sort((a, b) => b[1] - a[1])[0]?.[0] || "Traffic incident",
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+
   // ---------------- API LOAD ----------------
   useEffect(() => {
     const fetchIncidents = async () => {
@@ -74,25 +112,18 @@ export default function Dashboard() {
     };
 
     fetchIncidents();
+
+    window.addEventListener("sair-demo-reports-updated", fetchIncidents);
+
+    return () => window.removeEventListener("sair-demo-reports-updated", fetchIncidents);
   }, []);
 
   // ---------------- STATUS UPDATE ----------------
   const handleUpdateStatus = async (id, newStatus) => {
     if (isDemoMode() || dataSource === "mock") {
-      setIncidents(prev =>
-        prev.map(inc =>
-          inc.id === id
-            ? { ...inc, status: newStatus }
-            : inc
-        )
-      );
-
-      if (selectedIncident?.id === id) {
-        setSelectedIncident(prev =>
-          prev ? { ...prev, status: newStatus } : prev
-        );
-      }
-
+      const updatedReports = updateDemoReport(id, { status: newStatus }, `Dashboard changed status to ${newStatus.replace("_", " ")}.`);
+      setIncidents(updatedReports);
+      setSelectedIncident(updatedReports.find(report => report.id === id) || null);
       return;
     }
 
@@ -162,6 +193,7 @@ export default function Dashboard() {
   const statuses = [
     { id: 'all', label: 'All Cases' },
     { id: 'pending', label: 'Pending' },
+    { id: 'under_review', label: 'Under Review' },
     { id: 'approved', label: 'Approved' },
     { id: 'resolved', label: 'Resolved' },
     { id: 'rejected', label: 'Rejected' },
@@ -194,8 +226,14 @@ export default function Dashboard() {
     }
   };
 
+  const handleResetDemoData = () => {
+    const restored = resetDemoReports();
+    setIncidents(restored);
+    setSelectedIncident(restored[0] || null);
+  };
+
   return (
-    <div className="flex h-screen bg-[#f1f5f9] font-sans overflow-hidden text-slate-800" dir="ltr">
+    <div className="flex min-h-screen bg-[#F4F7FB] font-sans text-slate-800" dir="ltr">
       <style>{dashboardStyles}</style>
 
       <Sidebar
@@ -212,17 +250,42 @@ export default function Dashboard() {
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <main className="flex-1 relative overflow-y-auto lg:overflow-hidden bg-gray-50/50 flex flex-col p-4 lg:p-6 gap-6">
+        <main className="flex-1 relative bg-[#F4F7FB] flex flex-col p-4 lg:p-6 gap-6">
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#102033]">Command Dashboard</h1>
+              <p className="text-xs text-[#64748B] font-medium">Portfolio demo using fictional accident reports.</p>
+            </div>
+            {dataSource === "mock" && (
+              <button
+                onClick={handleResetDemoData}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-[#102033] rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset Demo Data
+              </button>
+            )}
+          </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 shrink-0">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 shrink-0">
 
             <StatCard
-              title="Pending"
-              value={pending}
-              sub="Needs review"
-              icon={Clock}
+              title="Total Reports"
+              value={total}
+              sub="All cases"
+              icon={FileText}
               delay="0s"
+              className="p-4 lg:p-5"
+            />
+
+            <StatCard
+              title="Pending Review"
+              value={pending}
+              sub="Pending/Review"
+              icon={Clock}
+              delay="0.05s"
               className="p-4 lg:p-5"
             />
 
@@ -236,26 +299,35 @@ export default function Dashboard() {
             />
 
             <StatCard
-              title="Resolved/Approved"
+              title="Resolved Reports"
               value={approved}
-              sub="Processed"
+              sub="Closed"
               icon={CheckCircle}
+              delay="0.15s"
+              className="p-4 lg:p-5"
+            />
+
+            <StatCard
+              title="Unassigned"
+              value={unassigned}
+              sub="Needs unit"
+              icon={Users}
               delay="0.2s"
               className="p-4 lg:p-5"
             />
 
             <StatCard
-              title="Total"
-              value={total}
-              sub="System"
-              icon={FileText}
-              delay="0.3s"
+              title="Reports Today"
+              value={reportsToday}
+              sub={today}
+              icon={CalendarDays}
+              delay="0.25s"
               className="p-4 lg:p-5"
             />
 
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 shrink-0">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-gray-900">Status Breakdown</h2>
@@ -289,17 +361,42 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-gray-900">Hotspot Summary</h2>
+                <MapPin className="w-4 h-4 text-[#D64545]" />
+              </div>
+              <div className="space-y-3">
+                {hotspotSummary.map((item) => (
+                  <div key={item.locationName} className="border border-slate-100 rounded-xl p-3 bg-[#F4F7FB]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-[#102033]">{item.locationName}</p>
+                        <p className="text-xs text-[#64748B]">{item.commonType}</p>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-white border border-slate-100 text-[#102033]">
+                        {item.count} reports
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-bold uppercase text-[#D64545] mt-2">
+                      Highest priority: {item.highestPriority}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
 
 
           {/* Split View */}
-          <div ref={containerRef} className="lg:flex-1 flex flex-col lg:flex-row lg:overflow-hidden relative lg:min-h-0">
+          <div ref={containerRef} className="flex flex-col lg:flex-row relative min-h-0">
 
             {/* LEFT - List */}
             <div
               style={{ width: window.innerWidth < 1024 ? '100%' : `${leftWidth}%` }}
-              className="flex flex-col h-auto lg:h-full lg:pr-2 shrink-0"
+              className="flex flex-col h-auto lg:pr-2 shrink-0"
             >
 
               <div className="flex gap-2 mb-4 shrink-0 overflow-x-auto pb-1 custom-scrollbar">
@@ -317,7 +414,7 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pb-4 custom-scrollbar pr-1">
+              <div className="space-y-3 pb-4 custom-scrollbar pr-1">
                 {filteredIncidents.length > 0 ? (
                   filteredIncidents.map((inc, i) => (
                     <ReportCard
@@ -343,7 +440,7 @@ export default function Dashboard() {
             />
 
             {/* RIGHT - Details */}
-            <div ref={detailsRef} className="flex-1 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden shadow-sm lg:ml-2 min-h-[500px] lg:min-h-0 mb-8 lg:mb-0">
+            <div ref={detailsRef} className="flex-1 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden shadow-sm lg:ml-2 min-h-[500px] mb-8 lg:mb-0">
 
               {selectedIncident?.id ? (
                 <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
@@ -368,7 +465,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <p className="text-xs lg:text-sm text-gray-500 font-medium">
-                        {selectedIncident?.partyName || selectedIncident?.driver || "Citizen Report"} • {selectedIncident?.occurredAt ? new Date(selectedIncident.occurredAt).toLocaleString() : new Date(selectedIncident.createdAt).toLocaleString()}
+                        {selectedIncident?.reporterName || selectedIncident?.partyName || selectedIncident?.driver || "Citizen Report"} • {selectedIncident?.occurredAt ? new Date(selectedIncident.occurredAt).toLocaleString() : new Date(selectedIncident.createdAt).toLocaleString()}
                       </p>
                     </div>
 
@@ -383,8 +480,14 @@ export default function Dashboard() {
                           </button>
 
                           {(selectedIncident.status === 'submitted' || selectedIncident.status === 'pending') && (
+                            <button onClick={() => handleUpdateStatus(selectedIncident.id, 'under_review')} className="flex-1 sm:flex-none px-4 py-2 bg-[#F2A93B] hover:bg-[#e29b2f] transition-colors text-[#102033] font-bold text-sm rounded-xl shadow-md">
+                              <AlertCircle className="w-4 h-4 inline mr-1" /> Mark Review
+                            </button>
+                          )}
+
+                          {selectedIncident.status === 'under_review' && (
                             <button onClick={() => handleUpdateStatus(selectedIncident.id, 'approved')} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold text-sm rounded-xl shadow-md">
-                              <AlertCircle className="w-4 h-4 inline mr-1" /> Approve
+                              <CheckCircle className="w-4 h-4 inline mr-1" /> Approve
                             </button>
                           )}
 
