@@ -162,3 +162,60 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
   outline: none;
 }
+
+/* ===== Layout height/scroll safety fix ===== */
+
+html,
+body,
+#root {
+  min-height: 100%;
+  width: 100%;
+}
+
+#root {
+  text-align: initial;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sair-app,
+.app-shell,
+.dashboard-layout,
+.layout-shell {
+  min-height: 100vh;
+  overflow: visible;
+}
+
+aside {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(37, 99, 235, 0.28) transparent;
+}
+
+.sair-sidebar {
+  height: 100vh;
+  min-height: 100vh;
+  align-self: stretch;
+}
+
+@supports (height: 100dvh) {
+  .sair-sidebar {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.24);
+  border-radius: 999px;
+}

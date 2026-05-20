@@ -87,7 +87,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
 
       <aside
         style={{ width: `${width}px` }}
-        className={`fixed lg:sticky lg:top-0 bg-white border-r border-[#D8E0EA] flex flex-col h-screen shrink-0 z-50 shadow-sm transition-all duration-300 ${
+        className={`sair-sidebar fixed top-0 bottom-0 left-0 lg:sticky lg:top-0 bg-white border-r border-[#D8E0EA] flex flex-col shrink-0 z-50 shadow-sm transition-transform duration-300 overflow-y-auto overflow-x-hidden overscroll-contain ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -110,7 +110,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav className="flex-1 min-h-0 px-4 py-6 space-y-2 overflow-y-auto overscroll-contain">
           {items.map((i) => {
             const isActive = location.pathname.startsWith(i.path);
             const Icon = i.icon;
@@ -143,7 +143,7 @@ export default function Sidebar({ lang = "en", isOpen, onClose }) {
             navigate("/profile");
             if (onClose) onClose();
           }}
-          className="w-full p-4 border-t border-gray-100 bg-gray-50/50 hover:bg-blue-50 transition-colors cursor-pointer group text-left"
+          className="w-full shrink-0 p-4 mt-auto border-t border-gray-100 bg-gray-50/70 hover:bg-blue-50 transition-colors cursor-pointer group text-left"
         >
           <div className="flex items-center gap-3 flex-row-reverse">
             <div className="relative">

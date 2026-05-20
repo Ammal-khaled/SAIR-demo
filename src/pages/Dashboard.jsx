@@ -233,7 +233,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F4F7FB] font-sans text-slate-800" dir="ltr">
+    <div className="flex h-screen overflow-hidden bg-[#F4F7FB] font-sans text-slate-800" dir="ltr">
       <style>{dashboardStyles}</style>
 
       <Sidebar
@@ -243,14 +243,14 @@ export default function Dashboard() {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <main className="flex-1 relative bg-[#F4F7FB] flex flex-col p-4 lg:p-6 gap-6">
+        <main className="flex-1 relative bg-[#F4F7FB] flex flex-col p-4 lg:p-6 gap-6 overflow-y-auto">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
             <div>

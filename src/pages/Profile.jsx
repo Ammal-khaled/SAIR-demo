@@ -1,6 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Phone, Shield, LogOut, Calendar, Hash, Activity, RotateCcw, LayoutDashboard, Database, KeyRound } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Shield,
+  LogOut,
+  Calendar,
+  Hash,
+  Activity,
+  RotateCcw,
+  LayoutDashboard,
+  Database,
+  KeyRound,
+} from "lucide-react";
 
 import api from "../api/client";
 import Sidebar from "../components/Sidebar";
@@ -46,7 +59,6 @@ export default function Profile({ onLogout }) {
         });
 
         setUser(res.data);
-
       } catch (err) {
         console.log(err?.response?.data || err);
         setUser(null);
@@ -59,7 +71,10 @@ export default function Profile({ onLogout }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#F4F7FB] font-sans text-slate-800" dir="ltr">
+    <div
+      className="flex h-screen overflow-hidden bg-[#F4F7FB] font-sans text-slate-800"
+      dir="ltr"
+    >
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -67,20 +82,23 @@ export default function Profile({ onLogout }) {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <div className="flex-1 p-4 lg:p-8 animate-fade-in bg-[#F4F7FB]">
-
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 animate-fade-in bg-[#F4F7FB]">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-[#102033] mb-2 tracking-tight">Account Settings</h1>
-                <p className="text-xs lg:text-sm text-[#64748B] font-medium">Demo administrator controls and system access overview.</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-[#102033] mb-2 tracking-tight">
+                  Account Settings
+                </h1>
+                <p className="text-xs lg:text-sm text-[#64748B] font-medium">
+                  Demo administrator controls and system access overview.
+                </p>
               </div>
               <span className="w-fit text-[10px] font-bold uppercase tracking-widest text-[#3BAE75] bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg">
                 Demo mode
@@ -97,7 +115,6 @@ export default function Profile({ onLogout }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
                 {/* Left Column: Avatar & Quick Info */}
                 <div className="md:col-span-1 space-y-6">
                   <div className="bg-white p-8 rounded-[24px] shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
@@ -107,7 +124,9 @@ export default function Profile({ onLogout }) {
                         <User size={48} strokeWidth={1.5} />
                       </div>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900">{user.fullName || "Unknown User"}</h2>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {user.fullName || "Unknown User"}
+                    </h2>
                     <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-3 py-1 rounded-full mt-2 inline-flex items-center gap-1.5">
                       <Shield size={12} /> {user.role}
                     </span>
@@ -137,7 +156,9 @@ export default function Profile({ onLogout }) {
                   <button
                     onClick={() => {
                       resetDemoReports();
-                      setResetMessage("Demo reports restored to their original fictional data.");
+                      setResetMessage(
+                        "Demo reports restored to their original fictional data.",
+                      );
                     }}
                     className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-[#102033] font-bold py-3.5 px-4 rounded-2xl transition-colors border border-slate-200 shadow-sm"
                   >
@@ -153,15 +174,17 @@ export default function Profile({ onLogout }) {
 
                 {/* Right Column: Detailed Info */}
                 <div className="md:col-span-2 space-y-6">
-
                   <div className="bg-white p-8 rounded-[24px] shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 pb-4 border-b border-gray-100">
-                      <Hash className="text-gray-400" size={20} /> Personal Information
+                      <Hash className="text-gray-400" size={20} /> Personal
+                      Information
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Full Name</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          Full Name
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium">
                           <User size={16} className="text-[#1a4b7c]" />
                           {user.fullName || "N/A"}
@@ -169,7 +192,9 @@ export default function Profile({ onLogout }) {
                       </div>
 
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Email Address</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          Email Address
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium">
                           <Mail size={16} className="text-[#1a4b7c]" />
                           {user.email || "N/A"}
@@ -177,7 +202,9 @@ export default function Profile({ onLogout }) {
                       </div>
 
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Phone Number</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          Phone Number
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium">
                           <Phone size={16} className="text-[#1a4b7c]" />
                           <span dir="ltr">{user.phone || "N/A"}</span>
@@ -185,7 +212,9 @@ export default function Profile({ onLogout }) {
                       </div>
 
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">National ID</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          National ID
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium">
                           <Hash size={16} className="text-[#1a4b7c]" />
                           {user.nationalId || "N/A"}
@@ -196,20 +225,34 @@ export default function Profile({ onLogout }) {
 
                   <div className="bg-white p-8 rounded-[24px] shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 pb-4 border-b border-gray-100">
-                      <Activity className="text-gray-400" size={20} /> System Records
+                      <Activity className="text-gray-400" size={20} /> System
+                      Records
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Account Created</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          Account Created
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium">
                           <Calendar size={16} className="text-[#1a4b7c]" />
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : "N/A"}
+                          {user.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString(
+                                undefined,
+                                {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                },
+                              )
+                            : "N/A"}
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">System ID</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                          System ID
+                        </span>
                         <div className="flex items-center gap-3 text-gray-800 font-medium text-sm">
                           <Shield size={16} className="text-[#1a4b7c]" />
                           {user.id || "N/A"}
@@ -220,17 +263,24 @@ export default function Profile({ onLogout }) {
 
                   <div className="bg-white p-8 rounded-[24px] shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 pb-4 border-b border-gray-100">
-                      <KeyRound className="text-[#2563EB]" size={20} /> System Access
+                      <KeyRound className="text-[#2563EB]" size={20} /> System
+                      Access
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-[#F4F7FB] border border-[#D8E0EA] rounded-2xl p-4">
-                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">Last Login</span>
-                        <div className="text-[#102033] font-bold">Demo session</div>
+                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">
+                          Last Login
+                        </span>
+                        <div className="text-[#102033] font-bold">
+                          Demo session
+                        </div>
                       </div>
 
                       <div className="bg-[#F4F7FB] border border-[#D8E0EA] rounded-2xl p-4">
-                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">Data Source</span>
+                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">
+                          Data Source
+                        </span>
                         <div className="flex items-center gap-2 text-[#102033] font-bold">
                           <Database size={16} className="text-[#3BAE75]" />
                           Fictional demo data
@@ -238,23 +288,28 @@ export default function Profile({ onLogout }) {
                       </div>
 
                       <div className="bg-[#F4F7FB] border border-[#D8E0EA] rounded-2xl p-4">
-                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">Access Level</span>
-                        <div className="text-[#102033] font-bold">Admin dashboard</div>
+                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">
+                          Access Level
+                        </span>
+                        <div className="text-[#102033] font-bold">
+                          Admin dashboard
+                        </div>
                       </div>
 
                       <div className="bg-[#F4F7FB] border border-[#D8E0EA] rounded-2xl p-4">
-                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">Environment</span>
-                        <div className="text-[#102033] font-bold">Portfolio demo</div>
+                        <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest block mb-1.5">
+                          Environment
+                        </span>
+                        <div className="text-[#102033] font-bold">
+                          Portfolio demo
+                        </div>
                       </div>
                     </div>
                   </div>
-
                 </div>
-
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

@@ -135,7 +135,7 @@ export default function ApprovedReports() {
   );
 
   return (
-    <div className="flex h-screen bg-[#F4F7FB] font-sans overflow-hidden text-[#1E293B]" dir="ltr">
+    <div className="flex h-screen overflow-hidden bg-[#F4F7FB] font-sans text-[#1E293B]" dir="ltr">
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -143,14 +143,14 @@ export default function ApprovedReports() {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar
           searchQuery={searchTerm}
           setSearchQuery={setSearchTerm}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <div className="h-full p-4 lg:p-8 overflow-y-auto">
+        <div className="flex-1 p-4 lg:p-8 overflow-y-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-[#102033] mb-1 tracking-tight">System Reports</h1>
